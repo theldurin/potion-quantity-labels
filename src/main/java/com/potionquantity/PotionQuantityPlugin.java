@@ -4,7 +4,7 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -17,7 +17,6 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.api.events.ClientTick;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,15 +39,15 @@ public class PotionQuantityPlugin extends Plugin  {
 	@Inject
 	private ItemManager itemManager;
 
-	private boolean rebuildPotions;
+    private boolean rebuildPotions;
 
-	class PotionPanel {
+	static class PotionPanel {
 		public Widget item;
 		public Widget dosesOriginal;
 		public Widget dosesDisplay;
 	}
 
-	private List<PotionPanel> potionPanels = new ArrayList<>();
+	private final List<PotionPanel> potionPanels = new ArrayList<>();
 
 	@Provides
 	PotionQuantityConfig provideConfig(ConfigManager configManager) {
@@ -63,7 +62,7 @@ public class PotionQuantityPlugin extends Plugin  {
 	}
 
 	@Override
-	protected void shutDown() throws Exception  {
+	protected void shutDown() throws UnsupportedOperationException {
 		potionPanels.clear();
 	}
 
@@ -75,10 +74,6 @@ public class PotionQuantityPlugin extends Plugin  {
 			createProgressBars();
 		}
 
-		if (scriptId == ScriptID.POTIONSTORE_DOSE_CHANGE)  {
-			//updateProgressBars();
-		}
-
 		if (scriptId == ScriptID.POTIONSTORE_WITHDRAW_DOSES)  {
 			rebuildPotions = true;
 		}
@@ -87,8 +82,9 @@ public class PotionQuantityPlugin extends Plugin  {
 	private void createProgressBars() {
 		potionPanels.clear();
 
-		Widget w = client.getWidget(ComponentID.BANK_POTIONSTORE_CONTENT);
-		Widget[] children = w.getDynamicChildren();
+		Widget w = client.getWidget(InterfaceID.Bankmain.POTIONSTORE_ITEMS);
+        assert w != null;
+        Widget[] children = w.getDynamicChildren();
 
 		//Iterate through all potions in storage
 		for (int i = 0; i + 4 < children.length; i += 5) {
@@ -123,10 +119,9 @@ public class PotionQuantityPlugin extends Plugin  {
 	private void updateProgressBars() {
 		for (PotionPanel panel : potionPanels) {
 			String str = panel.dosesOriginal.getText();
-			str = str.replaceAll(",", "");
+			str = str.replace(",", "");
 
 			boolean isUnf = panel.item.getName().contains("(unf)");
-			boolean isMix = panel.item.getName().contains("mix");
 			boolean isWeaponPoison = panel.item.getName().contains("Weapon poison");
 			boolean isPoultice = panel.item.getName().contains("poultice");
 
@@ -179,7 +174,7 @@ public class PotionQuantityPlugin extends Plugin  {
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick event) {
+	public void onClientTick() {
 		if (rebuildPotions) {
 			updateProgressBars();
 			rebuildPotions = false;

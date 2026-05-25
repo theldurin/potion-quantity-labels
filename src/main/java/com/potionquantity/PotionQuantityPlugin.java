@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -174,7 +175,7 @@ public class PotionQuantityPlugin extends Plugin  {
 	}
 
 	@Subscribe
-	public void onClientTick() {
+	public void onClientTick(ClientTick event) {
 		if (rebuildPotions) {
 			updateProgressBars();
 			rebuildPotions = false;

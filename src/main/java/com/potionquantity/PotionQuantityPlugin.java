@@ -1,23 +1,23 @@
 package com.potionquantity;
 
+import com.google.common.base.Strings;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.ScriptID;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.api.widgets.Widget;
-import com.google.common.base.Strings;
-import net.runelite.api.ScriptID;
-import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.widgets.WidgetType;
-import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.callback.ClientThread;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,8 @@ public class PotionQuantityPlugin extends Plugin  {
 	static class PotionPanel {
 		public Widget item;
 		public Widget dosesOriginal;
-		public Widget dosesDisplay;
+		public Widget potDisplay;
+		public Widget doseDisplay;
 	}
 
 	private final List<PotionPanel> potionPanels = new ArrayList<>();
@@ -97,20 +98,31 @@ public class PotionQuantityPlugin extends Plugin  {
 				continue;
 			}
 
-			Widget text = w.createChild(WidgetType.TEXT);
-			text.setOriginalHeight(wDoses.getOriginalHeight());
-			text.setOriginalWidth(wDoses.getOriginalWidth());
-			text.setOriginalX((wDoses.getOriginalX()) + 2);
-			text.setOriginalY((wDoses.getOriginalY()) + 1);
-			text.setFontId((wDoses.getFontId()));
-			text.setTextColor((wDoses.getTextColor()));
-			text.setTextShadowed(true);
-			text.revalidate();
+			// Hide vanilla quantity text
+			wDoses.setHidden(true);
+			Widget potText = w.createChild(WidgetType.TEXT);
+			Widget doseText = w.createChild(WidgetType.TEXT);
+
+			for (Widget text : new Widget[]{potText, doseText})
+			{
+				text.setOriginalHeight(wDoses.getOriginalHeight());
+				text.setOriginalWidth(wDoses.getOriginalWidth());
+				text.setFontId(wDoses.getFontId());
+				text.setTextColor(wDoses.getTextColor());
+				text.setTextShadowed(true);
+
+				// Start both at vanilla position
+				text.setOriginalX(wDoses.getOriginalX());
+				text.setOriginalY(wDoses.getOriginalY());
+
+				text.revalidate();
+			}
 
 			PotionPanel panel = new PotionPanel();
 			panel.item = wItem;
 			panel.dosesOriginal = wDoses;
-			panel.dosesDisplay = text;
+			panel.potDisplay = potText;
+			panel.doseDisplay = doseText;
 			potionPanels.add(panel);
 		}
 
@@ -152,25 +164,38 @@ public class PotionQuantityPlugin extends Plugin  {
 			String doseCountStr = String.format("%,d", doseCount);
 			String potCountStr = String.format("%,d", potCount);
 
+			// Reset text positions
+			panel.potDisplay.setOriginalY(panel.dosesOriginal.getOriginalY());
+			panel.doseDisplay.setOriginalY(panel.dosesOriginal.getOriginalY());
+
+			panel.potDisplay.setText("");
+			panel.doseDisplay.setText("");
+
 			switch(config.doseDisplay()) {
 				case POTS:
-					doseText = "Pots: " + potCountStr;
+					panel.potDisplay.setText("Pots: " + potCountStr);
 					break;
 				case DOSES:
-					doseText = "Doses: " + doseCountStr;
+					panel.doseDisplay.setText("Doses: " + doseCountStr);
 					break;
 
 				case POTS_AND_DOSES:
-					doseText = "Pots: " + potCountStr + " (" + doseCountStr + ")";
+					panel.potDisplay.setOriginalY(panel.dosesOriginal.getOriginalY() - 5);
+					panel.doseDisplay.setOriginalY(panel.dosesOriginal.getOriginalY() + 5);
+					panel.potDisplay.setText("Pots: " + potCountStr);
+					panel.doseDisplay.setText("Doses: " + doseCountStr);
 					break;
 
 				case DOSES_AND_POTS:
-					doseText = "Doses: " + doseCountStr + " (" + potCountStr + ")";
+					panel.doseDisplay.setOriginalY(panel.dosesOriginal.getOriginalY() - 5);
+					panel.potDisplay.setOriginalY(panel.dosesOriginal.getOriginalY() + 5);
+					panel.doseDisplay.setText("Doses: " + doseCountStr);
+					panel.potDisplay.setText("Pots: " + potCountStr);
 					break;
 			}
 
-			panel.dosesDisplay.setText(doseText);
-			panel.dosesDisplay.revalidate();
+			panel.potDisplay.revalidate();
+			panel.doseDisplay.revalidate();
 		}
 	}
 

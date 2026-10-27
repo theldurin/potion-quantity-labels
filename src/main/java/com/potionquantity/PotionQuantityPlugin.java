@@ -43,7 +43,7 @@ public class PotionQuantityPlugin extends Plugin  {
     private boolean rebuildPotions;
 
 	static class PotionPanel {
-		public Widget item;
+		public Widget name;
 		public Widget dosesOriginal;
 		public Widget potDisplay;
 		public Widget doseDisplay;
@@ -90,11 +90,11 @@ public class PotionQuantityPlugin extends Plugin  {
 
 		//Iterate through all potions in storage
 		for (int i = 0; i + 4 < children.length; i += 5) {
-			Widget wItem = children[i + 1];
+			Widget wName = children[i + 2];
 			Widget wDoses = children[i + 3];
 
 			//Skip past errors
-			if (wItem.getItemId() == -1 || Strings.isNullOrEmpty(wDoses.getText())) {
+			if (Strings.isNullOrEmpty(wName.getText()) || Strings.isNullOrEmpty(wDoses.getText())) {
 				continue;
 			}
 
@@ -119,7 +119,7 @@ public class PotionQuantityPlugin extends Plugin  {
 			}
 
 			PotionPanel panel = new PotionPanel();
-			panel.item = wItem;
+			panel.name = wName;
 			panel.dosesOriginal = wDoses;
 			panel.potDisplay = potText;
 			panel.doseDisplay = doseText;
@@ -134,19 +134,19 @@ public class PotionQuantityPlugin extends Plugin  {
 			String str = panel.dosesOriginal.getText();
 			str = str.replace(",", "");
 
-			boolean isUnf = panel.item.getName().contains("(unf)");
-			boolean isWeaponPoison = panel.item.getName().contains("Weapon poison");
-			boolean isPoultice = panel.item.getName().contains("poultice");
+			boolean isUnf = panel.name.getText().contains("(unf)");
+			boolean isWeaponPoison = panel.name.getText().contains("Weapon poison");
+			boolean isPoultice = panel.name.getText().contains("poultice");
 
 			int fullDoses;
 			if (isUnf || isWeaponPoison || isPoultice) {
 				fullDoses = 1;
 			} else {
 				//Get how many doses the potion is set to withdraw
-				int startIndex = panel.item.getName().indexOf("(") + 1;
+				int startIndex = panel.name.getText().indexOf("(") + 1;
 				int endIndex = startIndex + 1;
 
-				fullDoses = Integer.parseInt(panel.item.getName().substring(startIndex, endIndex));
+				fullDoses = Integer.parseInt(panel.name.getText().substring(startIndex, endIndex));
 			}
 
 			//Get how many doses
